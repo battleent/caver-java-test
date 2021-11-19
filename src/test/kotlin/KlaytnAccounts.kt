@@ -15,4 +15,9 @@ object KlaytnAccounts {
         "0x4f188ec02553f532f78bd1e47472ca30354ecec9",
         "0x78557dc9dfd3306d1a03fb1d73fc96a5844a91691b58d0cddfedb5079a5991f4"
     )
+
+    val devAdmin = caver.wallet.keyring.create(
+        "0x4f188ec02553f532f78bd1e47472ca30354ecec9",
+        "0x78557dc9dfd3306d1a03fb1d73fc96a5844a91691b58d0cddfedb5079a5991f4"
+    )
 }
