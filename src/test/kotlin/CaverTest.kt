@@ -110,6 +110,32 @@ class CaverTest {
     }
 
     @Test
+    fun `커스텀 KIP17 배포`() {
+        caver.wallet.add(KlaytnAccounts.devAdmin)
+        caver.wallet.add(KlaytnAccounts.feePayer)
+
+        val sendOptions = SendOptions()
+        sendOptions.from = KlaytnAccounts.devAdmin.address
+        sendOptions.setGas(BigInteger.valueOf(10000000))
+        sendOptions.feeDelegation = true
+        sendOptions.feePayer = KlaytnAccounts.feePayer.address
+
+        val version = 1
+        val tokenName = "DIVE_$version"
+        val tokenSymbol = "DIVE_$version"
+        val baseTokenURI = "https://api-lck.klet.ninja/cards/"
+        val abi = String(this::class.java.getResourceAsStream("abi.json").readBytes())
+        val bin = String(this::class.java.getResourceAsStream("bin.txt").readBytes())
+
+        val constructorParams = listOf(tokenName, tokenSymbol, baseTokenURI)
+        assertDoesNotThrow {
+            caver.contract.create(abi).deploy(sendOptions, bin, *constructorParams.toTypedArray()).also {
+                println(it.contractAddress)
+            }
+        }
+    }
+
+    @Test
     fun `NFT 토큰 발행 및 전송 테스트`() {
         caver.wallet.add(KlaytnAccounts.from)
         val contract = caver.kct.kip17.deploy(KlaytnAccounts.from.address, "TEST_NFT", "SYMBOL")
