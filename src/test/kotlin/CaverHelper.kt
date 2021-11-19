@@ -52,132 +52,118 @@ object CaverHelper {
         to: String,
         value: BigInteger,
         feePayer: Boolean = true
-    ): TransactionReceipt.TransactionReceiptData {
-        return if (feePayer) {
-            caver.transaction.feeDelegatedValueTransfer.create(
-                TxPropertyBuilder.feeDelegatedValueTransfer()
-                    .setFrom(from.address)
-                    .setTo(to)
-                    .setValue(value)
-                    .setGas(defaultGas)
-            )
-        } else {
-            caver.transaction.valueTransfer.create(
-                TxPropertyBuilder.valueTransfer()
-                    .setFrom(from.address)
-                    .setTo(to)
-                    .setValue(value)
-                    .setGas(defaultGas)
-            )
-        }.send(from, feePayer)
-    }
+    ): TransactionReceipt.TransactionReceiptData = when (feePayer) {
+        true -> caver.transaction.feeDelegatedValueTransfer.create(
+            TxPropertyBuilder.feeDelegatedValueTransfer()
+                .setFrom(from.address)
+                .setTo(to)
+                .setValue(value)
+                .setGas(defaultGas)
+        )
+        false -> caver.transaction.valueTransfer.create(
+            TxPropertyBuilder.valueTransfer()
+                .setFrom(from.address)
+                .setTo(to)
+                .setValue(value)
+                .setGas(defaultGas)
+        )
+    }.send(from, feePayer)
 
     fun updateAccount(
         keyring: AbstractKeyring,
         newKeyring: RoleBasedKeyring,
         feePayer: Boolean = true
-    ): TransactionReceipt.TransactionReceiptData {
-        return if (feePayer) {
-            caver.transaction.feeDelegatedAccountUpdate.create(
-                TxPropertyBuilder.feeDelegatedAccountUpdate()
-                    .setFrom(keyring.address)
-                    .setAccount(newKeyring.toAccount())
-                    .setGas(defaultGas)
-            )
-        } else {
-            caver.transaction.accountUpdate.create(
-                TxPropertyBuilder.accountUpdate()
-                    .setFrom(keyring.address)
-                    .setAccount(newKeyring.toAccount())
-                    .setGas(defaultGas)
-            )
-        }.send(keyring, feePayer)
-    }
+    ): TransactionReceipt.TransactionReceiptData = when (feePayer) {
+        true -> caver.transaction.feeDelegatedAccountUpdate.create(
+            TxPropertyBuilder.feeDelegatedAccountUpdate()
+                .setFrom(keyring.address)
+                .setAccount(newKeyring.toAccount())
+                .setGas(defaultGas)
+        )
+        false -> caver.transaction.accountUpdate.create(
+            TxPropertyBuilder.accountUpdate()
+                .setFrom(keyring.address)
+                .setAccount(newKeyring.toAccount())
+                .setGas(defaultGas)
+        )
+    }.send(keyring, feePayer)
 
     fun deploy(
         keyring: AbstractKeyring,
         byteCode: String,
         feePayer: Boolean = true
-    ): TransactionReceipt.TransactionReceiptData {
-        return if (feePayer) {
-            caver.transaction.feeDelegatedSmartContractDeploy.create(
-                TxPropertyBuilder.feeDelegatedSmartContractDeploy()
-                    .setFrom(keyring.address)
-                    .setCodeFormat(Numeric.toHexStringWithPrefix(CodeFormat.EVM))
-                    .setInput(byteCode)
-                    .setGas(defaultGas)
-            )
-        } else {
-            caver.transaction.smartContractDeploy.create(
-                TxPropertyBuilder.smartContractDeploy()
-                    .setFrom(keyring.address)
-                    .setCodeFormat(Numeric.toHexStringWithPrefix(CodeFormat.EVM))
-                    .setInput(byteCode)
-                    .setGas(defaultGas)
-            )
-        }.send(keyring, feePayer)
-    }
+    ): TransactionReceipt.TransactionReceiptData = when (feePayer) {
+        true -> caver.transaction.feeDelegatedSmartContractDeploy.create(
+            TxPropertyBuilder.feeDelegatedSmartContractDeploy()
+                .setFrom(keyring.address)
+                .setCodeFormat(Numeric.toHexStringWithPrefix(CodeFormat.EVM))
+                .setInput(byteCode)
+                .setGas(defaultGas)
+        )
+        false -> caver.transaction.smartContractDeploy.create(
+            TxPropertyBuilder.smartContractDeploy()
+                .setFrom(keyring.address)
+                .setCodeFormat(Numeric.toHexStringWithPrefix(CodeFormat.EVM))
+                .setInput(byteCode)
+                .setGas(defaultGas)
+        )
+    }.send(keyring, feePayer)
 
     fun execution(
         keyring: AbstractKeyring,
         contractAddress: String,
         input: String,
         feePayer: Boolean = true
-    ): TransactionReceipt.TransactionReceiptData {
-        return if (feePayer) {
-            caver.transaction.feeDelegatedSmartContractExecution.create(
-                TxPropertyBuilder.feeDelegatedSmartContractExecution()
-                    .setFrom(keyring.address)
-                    .setTo(contractAddress)
-                    .setInput(input)
-                    .setGas(defaultGas)
-            )
-        } else {
-            caver.transaction.smartContractExecution.create(
-                TxPropertyBuilder.smartContractExecution()
-                    .setFrom(keyring.address)
-                    .setTo(contractAddress)
-                    .setInput(input)
-                    .setGas(defaultGas)
-            )
-        }.send(keyring, feePayer)
-    }
+    ): TransactionReceipt.TransactionReceiptData = when (feePayer) {
+        true -> caver.transaction.feeDelegatedSmartContractExecution.create(
+            TxPropertyBuilder.feeDelegatedSmartContractExecution()
+                .setFrom(keyring.address)
+                .setTo(contractAddress)
+                .setInput(input)
+                .setGas(defaultGas)
+        )
+        false -> caver.transaction.smartContractExecution.create(
+            TxPropertyBuilder.smartContractExecution()
+                .setFrom(keyring.address)
+                .setTo(contractAddress)
+                .setInput(input)
+                .setGas(defaultGas)
+        )
+    }.send(keyring, feePayer)
 
     private fun AbstractTransaction.send(
         keyring: AbstractKeyring,
         feePayer: Boolean
-    ): TransactionReceipt.TransactionReceiptData {
-        return this.let {
-            it.sign(keyring)
-        }.let {
-            if (feePayer) {
-                val valueTransfer = abstractFeeDelegatedTransaction(it)
-                valueTransfer.feePayer = KlaytnAccounts.feePayer.address
-                valueTransfer.klaytnCall = caver.rpc.klay
-                valueTransfer.signAsFeePayer(KlaytnAccounts.feePayer)
-            } else {
-                it
-            }
-        }.let {
-            caver.rpc.klay.sendRawTransaction(it.rawTransaction).send()
-        }.let {
-            receiptProcessor.waitForTransactionReceipt(it.result).also { receiptData ->
-                println(receiptData.transactionHash)
-            }
+    ): TransactionReceipt.TransactionReceiptData = this.let {
+        it.sign(keyring)
+    }.let {
+        if (feePayer) {
+            val valueTransfer = abstractFeeDelegatedTransaction(it)
+            valueTransfer.feePayer = KlaytnAccounts.feePayer.address
+            valueTransfer.klaytnCall = caver.rpc.klay
+            valueTransfer.signAsFeePayer(KlaytnAccounts.feePayer)
+        } else {
+            it
+        }
+    }.let {
+        caver.rpc.klay.sendRawTransaction(it.rawTransaction).send()
+    }.let {
+        receiptProcessor.waitForTransactionReceipt(it.result).also { receiptData ->
+            println(receiptData.transactionHash)
         }
     }
 
-    private fun abstractFeeDelegatedTransaction(it: AbstractTransaction): AbstractFeeDelegatedTransaction {
-        return when (it.type) {
-            TransactionType.TxTypeFeeDelegatedValueTransfer.name ->
-                caver.transaction.feeDelegatedValueTransfer.decode(it.rawTransaction)
-            TransactionType.TxTypeFeeDelegatedAccountUpdate.name ->
-                caver.transaction.feeDelegatedAccountUpdate.decode(it.rawTransaction)
-            TransactionType.TxTypeFeeDelegatedSmartContractDeploy.name ->
-                caver.transaction.feeDelegatedSmartContractDeploy.decode(it.rawTransaction)
-            TransactionType.TxTypeFeeDelegatedSmartContractExecution.name ->
-                caver.transaction.feeDelegatedSmartContractExecution.decode(it.rawTransaction)
-            else -> throw Exception()
-        } as AbstractFeeDelegatedTransaction
-    }
+    private fun abstractFeeDelegatedTransaction(
+        it: AbstractTransaction
+    ): AbstractFeeDelegatedTransaction = when (it.type) {
+        TransactionType.TxTypeFeeDelegatedValueTransfer.name ->
+            caver.transaction.feeDelegatedValueTransfer.decode(it.rawTransaction)
+        TransactionType.TxTypeFeeDelegatedAccountUpdate.name ->
+            caver.transaction.feeDelegatedAccountUpdate.decode(it.rawTransaction)
+        TransactionType.TxTypeFeeDelegatedSmartContractDeploy.name ->
+            caver.transaction.feeDelegatedSmartContractDeploy.decode(it.rawTransaction)
+        TransactionType.TxTypeFeeDelegatedSmartContractExecution.name ->
+            caver.transaction.feeDelegatedSmartContractExecution.decode(it.rawTransaction)
+        else -> throw Exception()
+    } as AbstractFeeDelegatedTransaction
 }
